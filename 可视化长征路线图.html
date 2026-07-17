@@ -1,749 +1,478 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>可视化长征路线图</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
-  background:#F5F0E8; color:#2C3E50;
-  min-height:100vh; display:flex; flex-direction:column;
-}
-header {
-  background:linear-gradient(135deg,#8B0000 0%,#B22222 50%,#CD5C5C 100%);
-  color:#fff; padding:16px 30px 12px; text-align:center; flex-shrink:0;
-  box-shadow:0 2px 12px rgba(0,0,0,0.15); position:relative; z-index:1000;
-}
-header h1 {
-  font-family:'STSong','SimSun','Noto Serif SC',serif;
-  font-size:30px; font-weight:700; letter-spacing:6px; color:#fff;
-  text-shadow:1px 1px 3px rgba(0,0,0,0.3);
-}
-header .subtitle { font-size:13px; opacity:0.85; margin-top:5px; letter-spacing:2px; }
-main { display:flex; flex:1; min-height:0; }
-#map-container { flex:1; min-width:0; position:relative; }
-#map { width:100%; height:100%; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f5f1eb; color: #2c2c2c; min-height: 100vh; display: flex; flex-direction: column; }
 
-#info-panel {
-  width:350px; flex-shrink:0;
-  background:#FAFAF8; border-left:1px solid #E0D8C8;
-  overflow-y:auto; padding:0;
-}
-#info-panel::-webkit-scrollbar { width:6px; }
-#info-panel::-webkit-scrollbar-track { background:#F0EBE0; }
-#info-panel::-webkit-scrollbar-thumb { background:#C0B8A8; border-radius:3px; }
+header { background: linear-gradient(135deg, #8b1a1a, #c0392b); color: #fff; text-align: center; padding: 24px 20px 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+header h1 { font-size: 32px; letter-spacing: 8px; font-weight: 700; }
+header p { font-size: 14px; opacity: .8; margin-top: 6px; letter-spacing: 2px; }
 
-#info-default { padding:30px 24px; }
-#info-default h2 {
-  font-family:'STSong','SimSun',serif; font-size:24px; color:#8B0000;
-  text-align:center; margin-bottom:16px; letter-spacing:4px;
-}
-#info-default .poem {
-  font-family:'STKaiti','KaiTi','Noto Serif SC',serif;
-  font-size:16px; line-height:2; text-align:center; color:#5D4037;
-}
-#info-default .poem-author { text-align:center; color:#8D6E63; font-size:13px; margin-top:6px; }
-#info-default hr { border:none; border-top:1px dashed #D0C8B8; margin:18px 0; }
-#info-default .intro {
-  font-size:14px; line-height:1.9; color:#5D4037; text-indent:2em;
-}
+main { flex: 1; display: flex; gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; width: 100%; }
+.map-section { flex: 7; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.08); overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 12px; min-height: 600px; }
+.map-section svg { width: 100%; height: auto; max-height: 78vh; display: block; }
 
-#info-detail { display:none; padding:0; }
-#info-detail .detail-header { padding:18px 24px 14px; color:#fff; }
-#info-detail .detail-header .loc-name {
-  font-family:'STSong','SimSun',serif; font-size:26px; font-weight:700; letter-spacing:4px;
-}
-#info-detail .detail-header .loc-meta { margin-top:6px; font-size:12px; opacity:0.9; }
-#info-detail .detail-header .loc-meta span { display:inline-block; margin-right:12px; }
-#info-detail .detail-header .loc-type-badge {
-  display:inline-block; font-size:11px; padding:2px 10px; border-radius:10px;
-  background:rgba(255,255,255,0.25); margin-top:6px; letter-spacing:1px;
-}
-#info-detail .detail-body { padding:18px 24px; }
-#info-detail .section-title {
-  font-size:13px; font-weight:600; color:#8D6E63;
-  margin:12px 0 5px; letter-spacing:1px;
-  padding-bottom:3px; border-bottom:1px solid #EDE4D3;
-}
-#info-detail .section-title:first-child { margin-top:0; }
-#info-detail .desc { font-size:14px; line-height:1.9; color:#4E342E; text-indent:2em; }
-#info-detail .event-item {
-  font-size:13px; line-height:1.8; color:#5D4037;
-  padding-left:16px; position:relative;
-}
-#info-detail .event-item::before { content:'·'; position:absolute; left:4px; color:#B22222; font-weight:700; }
-#info-detail .quote-box {
-  background:#F5F0E8; border-left:3px solid #B22222;
-  padding:10px 14px; margin:6px 0; border-radius:0 4px 4px 0;
-}
-#info-detail .quote-box .quote-text {
-  font-family:'STKaiti','KaiTi','Noto Serif SC',serif;
-  font-size:14px; line-height:1.8; color:#4E342E; font-style:italic;
-}
-#info-detail .quote-box .quote-source { font-size:12px; color:#8D6E63; margin-top:3px; text-align:right; }
-#info-detail .back-btn {
-  display:inline-block; margin-top:14px; padding:6px 18px;
-  background:#EDE4D3; border:none; border-radius:4px; color:#5D4037;
-  font-size:13px; cursor:pointer; transition:background 0.2s;
-}
-#info-detail .back-btn:hover { background:#D0C8B8; }
+.sidebar { flex: 3; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.08); padding: 20px; overflow-y: auto; max-height: 82vh; min-width: 260px; }
+.sidebar .placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 400px; color: #999; text-align: center; }
+.sidebar .placeholder .icon { font-size: 48px; margin-bottom: 12px; opacity: .4; }
+.sidebar .placeholder p { font-size: 14px; line-height: 1.8; }
+.sidebar .content h2 { color: #8b1a1a; font-size: 22px; margin-bottom: 4px; border-bottom: 2px solid #e8e0d6; padding-bottom: 10px; }
+.sidebar .content .meta { font-size: 13px; color: #888; margin-bottom: 14px; }
+.sidebar .content .meta span { margin-right: 16px; }
+.sidebar .content .section { margin-bottom: 16px; }
+.sidebar .content .section h3 { font-size: 15px; color: #8b1a1a; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.sidebar .content .section h3::before { content: ''; display: inline-block; width: 4px; height: 16px; background: #c0392b; border-radius: 2px; }
+.sidebar .content .section p { font-size: 14px; line-height: 1.8; color: #444; }
+.sidebar .content .section blockquote { background: #f9f6f0; border-left: 3px solid #c0392b; padding: 10px 14px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 13px; line-height: 1.8; color: #555; font-style: italic; }
+.sidebar .content .section blockquote cite { display: block; text-align: right; font-size: 12px; color: #888; margin-top: 4px; font-style: normal; }
 
-.custom-marker { background:transparent !important; border:none !important; }
-.custom-marker div {
-  display:flex; align-items:center; justify-content:center;
-  font-family:'PingFang SC','Microsoft YaHei',sans-serif; font-weight:700;
-  box-shadow:0 2px 6px rgba(0,0,0,0.3);
-  transition:transform 0.2s;
-}
-.custom-marker div:hover { transform:scale(1.15); }
+footer { background: #2c2c2c; color: #aaa; text-align: center; padding: 14px 20px; font-size: 13px; letter-spacing: 1px; }
 
-.leaflet-tooltip {
-  font-family:'PingFang SC','Microsoft YaHei',sans-serif;
-  font-size:13px; padding:4px 10px; border-radius:4px;
-  background:rgba(44,62,80,0.9); color:#fff; border:none;
-  box-shadow:0 1px 4px rgba(0,0,0,0.2);
-}
-.leaflet-tooltip::before { border-top-color:rgba(44,62,80,0.9); }
+.marker { cursor: pointer; transition: transform .2s, filter .2s; }
+.marker:hover { filter: brightness(1.2); }
+.marker:hover .marker-dot { stroke-width: 3; }
+.marker.active .marker-dot { fill: #f1c40f; stroke: #e67e22; stroke-width: 3; }
+.marker.active .marker-label { font-weight: bold; fill: #c0392b; }
+.route-line { fill: none; stroke: #c0392b; stroke-width: 2.5; stroke-dasharray: 6,4; opacity: .7; }
 
-.video-link {
-  display:inline-flex; align-items:center; gap:6px;
-  margin:4px 0; padding:7px 14px;
-  background:#fff; border:1px solid #D0C8B8; border-radius:4px;
-  color:#4E342E; font-size:13px; text-decoration:none;
-  transition:all 0.2s;
-}
-.video-link:hover { background:#F5F0E8; border-color:#B22222; color:#B22222; }
-.video-link .play-icon { font-size:14px; }
-
-.cmdrs-section { margin-top:10px; }
-.cmdr-group { margin:5px 0; }
-.cmdr-group-label {
-  font-size:11px; font-weight:600; padding:1px 8px;
-  border-radius:3px; display:inline-block; margin-bottom:4px;
-  background:#F5F0E8;
-}
-.cmdr-list { display:flex; flex-wrap:wrap; gap:5px; }
-.cmdr-item {
-  display:flex; flex-direction:column; align-items:center;
-  width:54px; text-align:center;
-}
-.cmdr-avatar {
-  width:34px; height:34px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  font-size:13px; font-weight:700; color:#fff;
-  box-shadow:0 1px 3px rgba(0,0,0,0.2);
-  flex-shrink:0;
-}
-.cmdr-name { font-size:11px; line-height:1.2; margin-top:2px; color:#4E342E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:54px; }
-.cmdr-role { font-size:10px; line-height:1.2; color:#8D6E63; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:54px; }
-
-.route-legend {
-  background:rgba(255,255,255,0.93); padding:10px 14px;
-  border-radius:6px; box-shadow:0 1px 6px rgba(0,0,0,0.15);
-  font-size:13px; line-height:2; max-width:200px;
-}
-.route-legend .legend-title { font-weight:600; margin-bottom:2px; color:#2C3E50; font-size:13px; }
-.route-legend .legend-item { display:flex; align-items:center; gap:8px; color:#4E342E; }
-.route-legend .legend-item .swatch {
-  display:inline-block; width:20px; height:4px; border-radius:2px; flex-shrink:0;
-}
-footer {
-  background:#2C3E50; color:#95A5A6; text-align:center;
-  padding:8px; font-size:11px; flex-shrink:0; letter-spacing:1px;
-}
-
-@media (max-width:860px) {
-  main { flex-direction:column; }
-  #info-panel { width:100%; max-height:38vh; border-left:none; border-top:1px solid #E0D8C8; }
-  header h1 { font-size:22px; letter-spacing:4px; }
-}
+.legend { font-size: 12px; fill: #666; }
+.legend-rect { fill: #c0392b; opacity: .7; }
+@media (max-width: 860px) { main { flex-direction: column; } .sidebar { max-height: none; } }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>◇ 可视化长征路线图 ◇</h1>
-  <p class="subtitle">各路红军长征全景 · 1934—1936 · 点击地图标记查看详情</p>
+  <h1>可视化长征路线图</h1>
+  <p>中国工农红军长征路线 · 1934 — 1936</p>
 </header>
 
 <main>
-  <div id="map-container"><div id="map"></div></div>
-  <div id="info-panel">
-    <div id="info-default">
-      <h2>红军不怕远征难</h2>
-      <p class="poem">红军不怕远征难，万水千山只等闲。</p>
-      <p class="poem">五岭逶迤腾细浪，乌蒙磅礴走泥丸。</p>
-      <p class="poem">金沙水拍云崖暖，大渡桥横铁索寒。</p>
-      <p class="poem">更喜岷山千里雪，三军过后尽开颜。</p>
-      <p class="poem-author">—— 毛泽东《七律·长征》(1935年10月)</p>
-      <hr>
-      <p class="intro">1934年至1936年，红一方面军（中央红军）、红二方面军、红四方面军、红二十五军四支主力红军相继从各苏区出发，经过艰苦卓绝的战略转移，最终汇聚陕北。各路红军总行程达数万里，谱写了中国革命史上的壮丽史诗。点击地图上的彩色编号标记，了解重要地点的历史细节。</p>
-    </div>
-    <div id="info-detail"></div>
+  <div class="map-section">
+    <svg id="map" viewBox="0 0 800 620" xmlns="http://www.w3.org/2000/svg">
+      <!-- 中国地图轮廓（简化） -->
+      <path id="china-outline" d="M 695,35 L 720,38 740,42 755,48 768,58 778,72 782,88 780,105 772,118 766,128 760,140 758,152 762,162 768,172 772,182 770,195 762,205 756,215 750,225 746,238 745,250 748,262 750,275 748,290 742,305 736,318 730,330 726,342 720,354 714,366 708,378 700,390 692,402 682,412 670,422 658,430 644,438 630,445 616,452 602,458 588,464 574,470 558,476 542,482 526,488 510,492 494,496 478,498 462,500 446,501 430,502 414,502 398,500 382,498 366,495 350,492 336,488 322,484 308,479 294,474 280,468 266,462 252,455 240,447 228,438 216,428 206,418 196,407 186,396 178,384 170,372 162,360 154,348 146,336 138,324 130,312 122,300 114,288 106,276 98,264 90,252 82,240 74,228 66,216 60,204 55,192 52,180 52,168 56,156 62,144 70,132 80,120 92,108 106,98 122,88 140,78 160,70 182,64 206,58 232,54 260,50 290,46 322,42 356,40 390,38 424,37 458,36 492,36 524,36 556,37 586,38 614,38 640,38 662,36 680,35 695,35 Z" fill="#e8e0d6" stroke="#b8a88a" stroke-width="1.2" />
+
+      <!-- 省份分界线（简化示意） -->
+      <path d="M 400,498 L 392,460 388,430 390,400 400,370 415,340 430,310 445,280 458,250 468,220 476,190 482,160 490,130 500,100 510,72" fill="none" stroke="#d5c8b4" stroke-width=".8" stroke-dasharray="4,3" opacity=".5" />
+      <path d="M 300,445 L 330,420 360,395 380,370 392,340 398,310 400,280 398,250 392,220 382,190" fill="none" stroke="#d5c8b4" stroke-width=".8" stroke-dasharray="4,3" opacity=".5" />
+      <path d="M 490,36 L 485,60 475,90 462,120 448,150 435,180 425,210 418,240 415,270 418,300 425,330 435,360 448,390 460,420 470,450 478,478" fill="none" stroke="#d5c8b4" stroke-width=".8" stroke-dasharray="4,3" opacity=".5" />
+      <path d="M 556,37 L 545,65 530,95 512,125 498,155 488,185 482,215 480,245 482,275 488,305 498,335 510,365 522,395 532,425 538,455 540,480" fill="none" stroke="#d5c8b4" stroke-width=".8" stroke-dasharray="4,3" opacity=".5" />
+
+      <!-- 河流 -->
+      <path d="M 600,58 Q 580,80 555,105 Q 530,130 510,160 Q 490,190 475,220 Q 460,250 450,280 Q 442,310 438,340 Q 435,370 436,400 Q 438,430 442,460" fill="none" stroke="#9ac8d8" stroke-width="2" opacity=".5" />
+      <path d="M 435,340 Q 410,345 390,365 Q 370,385 355,410 Q 340,435 330,460" fill="none" stroke="#9ac8d8" stroke-width="1.5" opacity=".5" />
+
+      <!-- 长征路线 -->
+      <path id="route" class="route-line" d="M 618,468 L 610,455 600,440 590,425 578,408 565,390 550,372 535,355 518,340 500,328 480,318 458,310 438,305 420,298 405,290 392,278 382,264 375,248 370,230 368,212 370,194 375,178 382,162 392,148 405,136 418,126 432,118 445,112 458,108 470,106 480,108 488,114 494,122 498,132 500,144 500,156 498,170 494,184 488,198 480,210 470,220 458,230 445,238 432,244 420,248 410,250 402,248 396,244 392,238 390,228 392,218 396,208 402,198 410,190 420,182 432,176 445,172 458,170 470,170 480,172 490,176 498,182 504,192 508,204 510,216 510,228 508,240 504,250 498,260 490,268 480,274 468,278 456,280 445,278 436,274 428,268 422,260 418,250 416,238 418,226 422,215 428,205 436,198 446,192 456,190" />
+
+      <!-- 图例 -->
+      <g class="legend" transform="translate(30, 30)">
+        <rect class="legend-rect" x="0" y="0" width="14" height="4" rx="2" />
+        <text x="20" y="5">长征路线</text>
+        <circle cx="0" cy="16" r="4" fill="#8b1a1a" />
+        <text x="20" y="20">重要地点</text>
+      </g>
+
+      <!-- 地点标记 -->
+      <!-- 瑞金 -->
+      <g class="marker" data-id="ruijin" transform="translate(618,468)">
+        <circle class="marker-dot" r="7" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="10" y="4" font-size="11" fill="#333">瑞金</text>
+      </g>
+
+      <!-- 湘江 -->
+      <g class="marker" data-id="xiangjiang" transform="translate(555,400)">
+        <circle class="marker-dot" r="6" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="10" y="4" font-size="11" fill="#333">湘江</text>
+      </g>
+
+      <!-- 通道 -->
+      <g class="marker" data-id="tongdao" transform="translate(510,370)">
+        <circle class="marker-dot" r="5" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="-8" y="-10" font-size="10" fill="#333" text-anchor="end">通道</text>
+      </g>
+
+      <!-- 黎平 -->
+      <g class="marker" data-id="liping" transform="translate(480,355)">
+        <circle class="marker-dot" r="5" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="8" y="-8" font-size="10" fill="#333">黎平</text>
+      </g>
+
+      <!-- 遵义 -->
+      <g class="marker" data-id="zunyi" transform="translate(438,305)">
+        <circle class="marker-dot" r="7" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="10" y="4" font-size="11" fill="#333">遵义</text>
+      </g>
+
+      <!-- 赤水 -->
+      <g class="marker" data-id="chishui" transform="translate(392,248)">
+        <circle class="marker-dot" r="6" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="-8" y="-10" font-size="11" fill="#333" text-anchor="end">赤水</text>
+      </g>
+
+      <!-- 金沙江 -->
+      <g class="marker" data-id="jinsha" transform="translate(370,195)">
+        <circle class="marker-dot" r="6" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="8" y="4" font-size="11" fill="#333">金沙江</text>
+      </g>
+
+      <!-- 会理 -->
+      <g class="marker" data-id="huili" transform="translate(380,162)">
+        <circle class="marker-dot" r="5" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="8" y="-8" font-size="10" fill="#333">会理</text>
+      </g>
+
+      <!-- 泸定桥 -->
+      <g class="marker" data-id="luding" transform="translate(420,138)">
+        <circle class="marker-dot" r="6" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="8" y="4" font-size="11" fill="#333">泸定桥</text>
+      </g>
+
+      <!-- 懋功 -->
+      <g class="marker" data-id="maogong" transform="translate(458,126)">
+        <circle class="marker-dot" r="5" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="-8" y="-10" font-size="10" fill="#333" text-anchor="end">懋功</text>
+      </g>
+
+      <!-- 雪山 -->
+      <g class="marker" data-id="xueshan" transform="translate(490,130)">
+        <circle class="marker-dot" r="5" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="8" y="-8" font-size="10" fill="#333">雪山</text>
+      </g>
+
+      <!-- 毛儿盖 -->
+      <g class="marker" data-id="maoergai" transform="translate(500,156)">
+        <circle class="marker-dot" r="5" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="8" y="4" font-size="10" fill="#333">毛儿盖</text>
+      </g>
+
+      <!-- 草地 -->
+      <g class="marker" data-id="caodi" transform="translate(504,195)">
+        <circle class="marker-dot" r="6" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="8" y="4" font-size="11" fill="#333">草地</text>
+      </g>
+
+      <!-- 腊子口 -->
+      <g class="marker" data-id="lazikou" transform="translate(490,230)">
+        <circle class="marker-dot" r="5" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="-8" y="-10" font-size="10" fill="#333" text-anchor="end">腊子口</text>
+      </g>
+
+      <!-- 哈达铺 -->
+      <g class="marker" data-id="hadapu" transform="translate(470,265)">
+        <circle class="marker-dot" r="5" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="8" y="4" font-size="10" fill="#333">哈达铺</text>
+      </g>
+
+      <!-- 吴起镇 -->
+      <g class="marker" data-id="wuqi" transform="translate(456,285)">
+        <circle class="marker-dot" r="7" fill="#c0392b" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="10" y="4" font-size="11" fill="#333">吴起镇</text>
+      </g>
+
+      <!-- 延安 -->
+      <g class="marker" data-id="yanan" transform="translate(510,280)">
+        <circle class="marker-dot" r="6" fill="#c0392b" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="10" y="4" font-size="11" fill="#333">延安</text>
+      </g>
+
+      <!-- 井冈山 -->
+      <g class="marker" data-id="jinggang" transform="translate(660,440)">
+        <circle class="marker-dot" r="5" fill="#8b1a1a" stroke="#fff" stroke-width="2" />
+        <text class="marker-label" x="8" y="4" font-size="10" fill="#333">井冈山</text>
+      </g>
+    </svg>
   </div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="placeholder" id="placeholder">
+      <div class="icon">🗺️</div>
+      <p>点击地图上的地点<br>查看相关历史信息</p>
+    </div>
+    <div class="content" id="content" style="display:none"></div>
+  </aside>
 </main>
 
-<footer>
-  <p>© 2024 可视化长征路线图 · 地图 <a href="https://www.tianditu.gov.cn">天地图</a> · 据公开史料整理</p>
-</footer>
+<footer>&copy; 2026 可视化长征路线图 — 纪念中国工农红军长征胜利九十周年</footer>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-polyline-decorator/dist/leaflet.polyline-decorator.min.js"></script>
 <script>
-(function () {
-  'use strict';
-
-  // ======================== TYPE CONFIG ========================
-  var TYPE_CFG = {
-    start:    { color:'#6BA86B', label:'起点' },
-    meeting:  { color:'#4A8AB5', label:'会议' },
-    battle:   { color:'#B25A4A', label:'战役' },
-    rally:    { color:'#8B6EAE', label:'会师' },
-    landmark: { color:'#C4803A', label:'要地' },
-    end:      { color:'#A5832E', label:'终点' },
-  };
-
-  var ROUTE_NAMES = {
-    central:'红一方面军（中央红军）',
-    second:'红二方面军',
-    fourth:'红四方面军',
-    '25th':'红二十五军',
-    detach:'北上抗日先遣队'
-  };
-
-  // ======================== ROUTE DATA ========================
-  var ROUTES = [
-    {
-      id:'central', color:'#E54540',
-      pts:[[25.9,116.0],[25.8,115.5],[25.5,114.5],[25.2,113.0],[25.0,112.0],
-        [25.3,111.0],[25.5,110.5],[26.0,110.0],[26.2,109.5],[26.5,109.0],
-        [27.0,108.0],[27.5,107.5],[27.7,106.9],[28.0,106.8],[28.2,106.5],
-        [28.3,106.2],[28.3,106.0],[28.2,105.8],[28.0,105.5],[27.8,105.1],
-        [28.0,105.5],[28.2,105.8],[28.3,106.0],[28.2,106.5],[28.0,106.8],
-        [27.7,106.9],[27.8,106.3],[28.2,105.8],[28.3,106.0],[27.8,106.3],
-        [27.0,104.0],[26.5,103.0],[26.2,102.0],[26.5,101.0],[27.0,101.5],[28.0,102.0],[29.0,102.0],[29.9,102.2],
-        [30.5,102.5],[30.8,102.5],[31.0,102.4],[31.5,102.5],[32.0,102.8],
-        [32.7,102.7],[33.2,103.0],[33.8,103.5],[34.1,104.2],[35.0,105.0],
-        [35.5,105.5],[36.0,106.0],[36.5,107.0],[36.9,107.5],[36.6,109.5]]
-    },
-    {
-      id:'second', color:'#F5A623',
-      pts:[[29.4,110.2],[29.0,109.5],[28.5,109.0],[28.0,108.0],
-        [27.5,107.5],[27.0,106.5],[27.0,105.5],[27.0,104.5],
-        [26.5,104.0],[26.0,102.5],[26.5,101.5],[27.0,100.5],
-        [28.0,100.5],[29.0,100.0],[30.0,100.0],[31.0,100.0],
-        [31.6,99.9],[32.0,100.5],[33.0,101.0],[34.0,102.0],
-        [35.0,103.0],[35.5,104.0],[35.7,105.1]]
-    },
-    {
-      id:'fourth', color:'#4A90D9',
-      pts:[[31.5,105.9],[31.0,105.0],[31.0,103.5],
-        [31.0,102.4],[30.5,102.0],[30.0,101.5],[29.5,102.0],
-        [30.0,102.5],[31.0,102.0],[32.0,101.0],[33.0,101.0],
-        [34.0,102.0],[35.0,103.0],[35.7,105.1]]
-    },
-    {
-      id:'25th', color:'#7ED321',
-      pts:[[32.1,114.4],[33.0,113.5],[33.5,113.0],[34.0,112.5],
-        [34.0,111.5],[33.5,111.0],[33.5,110.5],[34.0,110.0],
-        [34.0,109.5],[33.8,109.0],[33.5,108.5],[34.0,108.0],
-        [34.5,107.0],[35.3,107.4],[36.0,108.0],[36.8,109.3]]
-    },
-    {
-      id:'detach', color:'#50E3C2',
-      pts:[[25.9,116.0],[25.8,116.4],[25.7,116.8],[25.9,117.4],[25.7,117.8],
-        [26.2,118.2],[26.4,118.7],[26.1,119.3],[26.6,118.9],
-        [27.9,118.5],[28.7,118.6],[28.9,118.5],[28.9,117.6],[28.9,117.9]]
-    }
-  ];
-  var ROUTE_COLORS = {};
-  ROUTES.forEach(function(r) { ROUTE_COLORS[r.id] = r.color; });
-
-  // ======================== LOCATIONS ========================
-  var LOCATIONS = [
-    { id:'ruijin', name:'瑞金', route:'central', coords:[25.9,116.0], type:'start',
-      events:['中央红军长征出发地'],
-      battles:['突破第一道封锁线'],
-      desc:'瑞金是中华苏维埃共和国临时中央政府所在地，被誉为"红色故都"和"共和国摇篮"。1934年10月，因第五次反"围剿"失利，中央红军主力8.6万余人从瑞金、于都等地出发，开始了举世闻名的两万五千里长征。',
-      quotes:[
-        ['《毛泽东选集》','"长征是历史纪录上的第一次，长征是宣言书，长征是宣传队，长征是播种机。"'],
-        ['《中国共产党简史》','1934年10月，中共中央率中央红军主力8.6万余人，从江西瑞金等地出发，开始长征。']
-      ],
-      commanders:[
-        {name:'毛泽东',role:'中华苏维埃主席',side:'ccp'},
-        {name:'朱德',role:'红军总司令',side:'ccp'},
-        {name:'周恩来',role:'中革军委副主席',side:'ccp'},
-        {name:'博古',role:'临时中央总书记',side:'ccp'},
-        {name:'蒋介石',role:'军事委员会委员长',side:'kmt'}
-      ]},
-    { id:'xiangjiang', name:'湘江', route:'central', coords:[25.5,110.5], type:'battle',
-      events:['湘江战役——长征中最惨烈的战役'],
-      battles:['湘江战役、突破第四道封锁线'],
-      desc:'1934年11月底至12月初，中央红军在广西北部湘江地区与国民党军血战五昼夜。红军以巨大代价突破湘江封锁线，兵力从出发时的8.6万人锐减至3万余人。湘江战役的惨痛损失直接促使了红军领导层的深刻反思。',
-      quotes:[
-        ['《中国共产党简史》','湘江战役后，中央红军从长征开始时的8.6万余人锐减至3万余人。'],
-        ['《长征组歌》','"血染湘江，红旗不倒。"']
-      ],
-      bilibili:[{bv:'BV1YA411i72J',title:'沙盘详解：过湘江'}],
-      commanders:[
-        {name:'林彪',role:'红一军团军团长',side:'ccp'},
-        {name:'彭德怀',role:'红三军团军团长',side:'ccp'},
-        {name:'聂荣臻',role:'红一军团政委',side:'ccp'},
-        {name:'何键',role:'追剿军总司令',side:'kmt'},
-        {name:'薛岳',role:'前敌总指挥',side:'kmt'}
-      ]},
-    { id:'tongdao', name:'通道', route:'central', coords:[26.2,109.7], type:'meeting',
-      events:['通道会议（1934年12月12日）'],
-      desc:'湘江战役后，中共中央在湖南通道召开紧急会议。毛泽东力主放弃原定与红二、六军团会合的计划，改向敌人力量薄弱的贵州进军。这一主张得到多数人支持，使红军避免了陷入包围圈，史称"通道转兵"。',
-      quotes:[
-        ['《毛泽东年谱》','通道会议促成了红军战略方向的根本转变。'],
-        ['历史评价','"通道会议为遵义会议的召开奠定了重要基础。"']
-      ],
-      commanders:[
-        {name:'毛泽东',role:'中华苏维埃主席',side:'ccp'},
-        {name:'周恩来',role:'中革军委副主席',side:'ccp'},
-        {name:'张闻天',role:'中共中央常委',side:'ccp'},
-        {name:'王稼祥',role:'中革军委副主席',side:'ccp'}
-      ]},
-    { id:'zunyi', name:'遵义', route:'central', coords:[27.7,106.9], type:'meeting',
-      events:['遵义会议（1935年1月15—17日）'],
-      desc:'遵义会议是中国共产党历史上一个生死攸关的转折点。会议集中解决了当时最为紧迫的军事和组织问题，批评了"左"倾军事路线，确立了毛泽东在红军和党中央的领导地位，挽救了党、挽救了红军、挽救了中\n国革命。',
-      quotes:[
-        ['《关于建国以来党的若干历史问题的决议》','遵义会议是党的历史上一个生死攸关的转折点。'],
-        ['《毛泽东选集》','"直到遵义会议以后，党才彻底地走上了布尔什维克化的道路。"']
-      ],
-      commanders:[
-        {name:'毛泽东',role:'中共中央政治局常委',side:'ccp'},
-        {name:'周恩来',role:'中革军委副主席',side:'ccp'},
-        {name:'张闻天',role:'中共中央总书记',side:'ccp'},
-        {name:'王稼祥',role:'中革军委副主席',side:'ccp'},
-        {name:'博古',role:'中共中央总书记（卸任）',side:'ccp'}
-      ]},
-    { id:'loushan', name:'娄山关', route:'central', coords:[28.0,106.8], type:'battle',
-      events:['娄山关战役（1935年2月）'],
-      desc:'娄山关是黔北咽喉，地势险要。红军二渡赤水后回师黔北，在娄山关与黔军激战，采取正面佯攻、侧后迂回的战术一举攻克天险，随后重占遵义。这是长征以来红军取得的第一次大胜，极大地鼓舞了全军士气。',
-      quotes:[['毛泽东《忆秦娥·娄山关》','"雄关漫道真如铁，而今迈步从头越。从头越，苍山如海，残阳如血。"']],
-      commanders:[
-        {name:'毛泽东',role:'前敌司令部政委',side:'ccp'},
-        {name:'彭德怀',role:'红三军团军团长',side:'ccp'},
-        {name:'杨尚昆',role:'红三军团政委',side:'ccp'}
-      ]},
-    { id:'chishui', name:'四渡赤水', route:'central', coords:[28.5,106.0], type:'battle',
-      events:['四渡赤水战役（1935年1—3月）'],
-      desc:'四渡赤水是毛泽东军事生涯中的"得意之笔"。面对数十万国民党军的围追堵截，毛泽东指挥中央红军在川黔滇交界处灵活机动、声东击西，四次横渡赤水河，最终跳出了敌人的包围圈，充分展现了高超的军事指挥艺术。',
-      quotes:[
-        ['《长征组歌》','"战士双脚走天下，四渡赤水出奇兵。"'],
-        ['哈里森·索尔兹伯里《长征：前所未闻的故事》','"四渡赤水是运动战的光辉典范。"']
-      ],
-      bilibili:[{bv:'BV18A411e7Qj',title:'四渡赤水（上）'},{bv:'BV1SD4y1S7PE',title:'四渡赤水（下）'}],
-      commanders:[
-        {name:'毛泽东',role:'前敌司令部政委',side:'ccp'},
-        {name:'朱德',role:'红军总司令',side:'ccp'},
-        {name:'周恩来',role:'中革军委副主席',side:'ccp'},
-        {name:'薛岳',role:'追击军总司令',side:'kmt'},
-        {name:'龙云',role:'云南省政府主席',side:'kmt'}
-      ]},
-    { id:'jinsha', name:'金沙江', route:'central', coords:[26.5,101.0], type:'landmark',
-      events:['巧渡金沙江（1935年5月）'],
-      desc:'中央红军在云南禄劝县皎平渡口用仅有的七条小船，在当地船工帮助下七天七夜全部渡过金沙江。至此红军彻底摆脱了数十万国民党军的追击，取得了战略转移中具有决定意义的胜利。',
-      quotes:[['毛泽东《七律·长征》','"金沙水拍云崖暖"']],
-      commanders:[
-        {name:'毛泽东',role:'前敌司令部政委',side:'ccp'},
-        {name:'朱德',role:'红军总司令',side:'ccp'},
-        {name:'刘伯承',role:'红军总参谋长',side:'ccp'},
-        {name:'薛岳',role:'追击军总司令',side:'kmt'}
-      ]},
-    { id:'luding', name:'泸定桥', route:'central', coords:[29.9,102.2], type:'battle',
-      events:['飞夺泸定桥（1935年5月29日）'],
-      desc:'大渡河天险自古难渡。红四团官兵冒雨昼夜疾行240里，22名突击队员攀踏着悬空的13根铁索，冒着对岸密集火力勇夺桥头堡，创造了战争史上的奇迹。',
-      quotes:[['埃德加·斯诺《红星照耀中国》','"飞夺泸定桥是长征中最具传奇色彩的英雄主义行动之一。"']],
-      bilibili:[{bv:'BV1VD4y1m7P7',title:'强渡大渡河+飞夺泸定桥'}],
-      commanders:[
-        {name:'杨成武',role:'红四团团长',side:'ccp'},
-        {name:'王开湘',role:'红四团政委',side:'ccp'},
-        {name:'刘伯承',role:'红军总参谋长',side:'ccp'},
-        {name:'刘文辉',role:'第24军军长',side:'kmt'}
-      ]},
-    { id:'jiajin', name:'夹金山', route:'central', coords:[30.8,102.5], type:'landmark',
-      events:['翻越夹金山（1935年6月）'],
-      desc:'夹金山海拔4000多米，是中央红军翻越的第一座大雪山。山上终年积雪，空气稀薄，天气瞬息万变。许多红军战士穿着单薄的衣衫和草鞋在严寒和缺氧中艰难攀登，不少战士永远长眠在了雪山上。',
-      quotes:[['《红军长征记》','"雪山是没有路的，我们踩在冰雪上，一步一步往上爬，风像刀子一样割在脸上。"']],
-      commanders:[
-        {name:'毛泽东',role:'中共中央政治局常委',side:'ccp'},
-        {name:'朱德',role:'红军总司令',side:'ccp'}
-      ]},
-    { id:'maogong', name:'懋功', route:'central', coords:[31.0,102.4], type:'rally',
-      events:['懋功会师（1935年6月18日）'],
-      desc:'中央红军与红四方面军在四川懋功（今小金县）胜利会师。两支主力红军会合后总兵力达10万余人，革命力量空前壮大。此后出现了关于北上还是南下的路线分歧。',
-      quotes:[['《中国共产党历史》','懋功会师是红军长征中的重大事件，两大主力的会合为革命注入了新的力量。']],
-      commanders:[
-        {name:'毛泽东',role:'中共中央政治局常委',side:'ccp'},
-        {name:'周恩来',role:'中革军委副主席',side:'ccp'},
-        {name:'张国焘',role:'红四方面军领导人',side:'ccp'},
-        {name:'徐向前',role:'红四方面军总指挥',side:'ccp'}
-      ]},
-    { id:'maoergai', name:'毛儿盖', route:'central', coords:[32.7,102.7], type:'meeting',
-      events:['毛儿盖会议（1935年8月20日）'],
-      desc:'毛儿盖会议通过了《关于一、四方面军会合后的政治形势与任务的决议》，重申北上方针，决定将红军分为左右两路军共同北上。会议为最终实现北上抗日目标提供了政治保证。',
-      quotes:[['《毛泽东传》','毛儿盖会议确立了北上抗日方针，是长征中的重要里程碑。']],
-      commanders:[
-        {name:'毛泽东',role:'中共中央政治局常委',side:'ccp'},
-        {name:'周恩来',role:'中革军委副主席',side:'ccp'},
-        {name:'张国焘',role:'红四方面军领导人',side:'ccp'}
-      ]},
-    { id:'caodi', name:'松潘草地', route:'central', coords:[33.2,103.0], type:'landmark',
-      events:['穿越松潘草地（1935年8月下旬）'],
-      desc:'松潘草地是一片高原沼泽，表面是草甸，下面却是深不可测的泥潭。红军在断粮缺药的极端困难条件下用约七天穿越了这片"死亡之地"。不少战士陷入泥潭或饥饿倒下，草地行军是长征中最艰苦的一段历程。',
-      quotes:[['哈里森·索尔兹伯里','"草地行军是长征中最艰苦的一段历程，其艰难程度超乎想象。"']],
-      commanders:[
-        {name:'毛泽东',role:'中共中央政治局常委',side:'ccp'},
-        {name:'周恩来',role:'中革军委副主席',side:'ccp'},
-        {name:'彭德怀',role:'红三军团军团长',side:'ccp'}
-      ]},
-    { id:'lazikou', name:'腊子口', route:'central', coords:[34.1,104.2], type:'battle',
-      events:['腊子口战役（1935年9月16—17日）'],
-      desc:'腊子口是甘南进入陇南的咽喉要道，两边悬崖绝壁，中间一条狭窄口子，一夫当关万夫莫开。红军正面强攻与攀爬悬崖迂回结合，在深夜攻克天险，打开了通往陕北的大门。',
-      quotes:[['杨成武《忆长征》','"腊子口一打开，全盘棋都活了。"']],
-      commanders:[
-        {name:'杨成武',role:'红四团团长',side:'ccp'},
-        {name:'王开湘',role:'红四团政委',side:'ccp'}
-      ]},
-    { id:'wuqi', name:'吴起镇', route:'central', coords:[36.9,107.5], type:'end',
-      events:['吴起镇会师——中央红军长征胜利结束'],
-      desc:'1935年10月19日，中央红军到达陕北吴起镇，与红十五军团会师。历时一年、行程二万五千里的长征胜利结束。到达时中央红军人数已从出发时的8.6万人锐减至约7000人。',
-      quotes:[['毛泽东《七律·长征》','"更喜岷山千里雪，三军过后尽开颜。"'],['《毛泽东选集》','"我说陕北是两点：一个落脚点，一个出发点。"']],
-      commanders:[
-        {name:'毛泽东',role:'中共中央政治局常委',side:'ccp'},
-        {name:'周恩来',role:'中革军委副主席',side:'ccp'},
-        {name:'彭德怀',role:'红一方面军司令员',side:'ccp'},
-        {name:'马鸿逵',role:'第15路军总指挥',side:'kmt'},
-        {name:'马鸿宾',role:'第35师师长',side:'kmt'}
-      ]},
-    { id:'yanan', name:'延安', route:'central', coords:[36.6,109.5], type:'end',
-      events:['创建陕甘宁革命根据地'],
-      desc:'延安是中共中央到达陕北后的革命大本营。从1936年到1948年，这里是中国革命的指挥中心和战略总后方，培育了以"自力更生、艰苦奋斗"为核心的延安精神。',
-      quotes:[['《毛泽东选集》','"延安是革命的圣地，是中国革命走向胜利的出发点。"']],
-      commanders:[
-        {name:'毛泽东',role:'中共中央主席',side:'ccp'},
-        {name:'朱德',role:'八路军总司令',side:'ccp'},
-        {name:'周恩来',role:'中革军委副主席',side:'ccp'},
-        {name:'张闻天',role:'中共中央总书记',side:'ccp'}
-      ]},
-
-    // 以下为其他各路红军重要地点
-    { id:'sangzhi', name:'桑植', route:'second', coords:[29.4,110.2], type:'start',
-      events:['红二、六军团从桑植出发长征（1935年11月19日）'],
-      desc:'1935年11月，贺龙、任弼时等率领的红二、六军团（后合编为红二方面军）从湖南桑植出发，开始战略转移。出发时兵力约1.7万余人，是各路长征队伍中出发最晚的一支。桑植也是贺龙元帅的故乡。',
-      quotes:[['《贺龙传》','桑植走出了红二方面军，贺龙元帅从此开始了万里征途。']],
-      commanders:[
-        {name:'贺龙',role:'红二方面军总指挥',side:'ccp'},
-        {name:'任弼时',role:'红二方面军政委',side:'ccp'},
-        {name:'关向应',role:'红二方面军副政委',side:'ccp'},
-        {name:'何键',role:'湘鄂川边区剿匪总司令',side:'kmt'}
-      ]},
-    { id:'wumeng', name:'乌蒙山', route:'second', coords:[27.0,104.5], type:'battle',
-      events:['乌蒙山回旋战（1936年2—3月）'],
-      desc:'红二、六军团在贵州西部的乌蒙山区与国民党军10多个师展开了一场精彩的回旋战。红军利用乌蒙山复杂地形，忽东忽西、灵活机动，在约一个月内转战上千里，成功跳出包围圈。',
-      quotes:[['毛泽东评价','"二、六军团在乌蒙山打转转，不要说敌人，连我们也被他们转晕了头。"']],
-      commanders:[
-        {name:'贺龙',role:'红二方面军总指挥',side:'ccp'},
-        {name:'任弼时',role:'红二方面军政委',side:'ccp'},
-        {name:'萧克',role:'红二方面军副总指挥',side:'ccp'}
-      ]},
-    { id:'jialing', name:'嘉陵江', route:'fourth', coords:[31.5,105.9], type:'battle',
-      events:['嘉陵江战役（1935年3月）——红四方面军开始长征'],
-      desc:'红四方面军在徐向前指挥下发起嘉陵江战役，采用声东击西战术，主力从苍溪附近秘密渡江，一举突破国民党军嘉陵江防线。此役后红四方面军主力撤离川陕苏区，开始长征。',
-      quotes:[['《徐向前回忆录》','"嘉陵江战役是红四方面军战史上一次大规模强渡江河的成功战例。"']],
-      commanders:[
-        {name:'徐向前',role:'红四方面军总指挥',side:'ccp'},
-        {name:'张国焘',role:'红四方面军领导人',side:'ccp'},
-        {name:'田颂尧',role:'第29军军长',side:'kmt'},
-        {name:'邓锡侯',role:'第28军军长',side:'kmt'}
-      ]},
-    { id:'garze', name:'甘孜', route:'second', coords:[31.6,99.9], type:'rally',
-      events:['甘孜会师（1936年6月）'],
-      desc:'红二、六军团经过长途转战到达西康甘孜（今四川甘孜），与先期到达的红四方面军胜利会师。7月，根据中央指示，红二、六军团与红三十二军合编为红二方面军，贺龙任总指挥。',
-      quotes:[['《中国共产党历史》','甘孜会师为三大主力红军最终会师创造了有利条件。']],
-      commanders:[
-        {name:'贺龙',role:'红二方面军总指挥',side:'ccp'},
-        {name:'任弼时',role:'红二方面军政委',side:'ccp'},
-        {name:'朱德',role:'红军总司令',side:'ccp'},
-        {name:'张国焘',role:'红四方面军领导人',side:'ccp'}
-      ]},
-    { id:'luoshan', name:'罗山何家冲', route:'25th', coords:[32.1,114.4], type:'start',
-      events:['红二十五军从何家冲出发长征（1934年11月16日）'],
-      desc:'红二十五军2984名指战员从河南罗山县何家冲出发，开始长征。这是四支长征队伍中人数最少的一支，平均年龄不到18岁，被称为"娃娃军"。他们最先到达陕北，为中央红军落脚奠定了基础。',
-      quotes:[['《红二十五军战史》','"红二十五军是一支年轻的队伍，但他们创造了长征史上的一个个奇迹。"']],
-      commanders:[
-        {name:'吴焕先',role:'红二十五军政委',side:'ccp'},
-        {name:'徐海东',role:'红二十五军副军长',side:'ccp'},
-        {name:'程子华',role:'红二十五军军长',side:'ccp'}
-      ]},
-    { id:'jingchuan', name:'泾川', route:'25th', coords:[35.3,107.4], type:'battle',
-      events:['泾川之战（1935年8月）'],
-      desc:'红二十五军在甘肃泾川遭国民党军堵截，年仅28岁的军政委吴焕先在激战中牺牲，是长征中牺牲的最高级别将领之一。全军化悲痛为力量继续北上。',
-      quotes:[['《解放军将领传》','"吴焕先是红二十五军的卓越领导者，他的牺牲是红军的重大损失。"']],
-      commanders:[
-        {name:'吴焕先',role:'红二十五军政委',side:'ccp'},
-        {name:'徐海东',role:'红二十五军副军长',side:'ccp'},
-        {name:'马鸿宾',role:'第35师师长',side:'kmt'}
-      ]},
-    { id:'huining', name:'会宁', route:'central', coords:[35.7,105.1], type:'rally',
-      events:['三大主力红军会师（1936年10月）——长征胜利结束'],
-      desc:'1936年10月，红一、红二、红四方面军在甘肃会宁地区胜利会师，标志着历时两年、纵横十余省、行程数万里的中国工农红军长征胜利结束。会宁会师是中国革命史上的光辉里程碑，开启了革命斗争的新局面。',
-      quotes:[['朱德','"三大主力红军的会师，是中国革命走向胜利的转折点。"'],['《中国共产党简史》','会宁会师标志着长征的胜利结束，中国革命进入了一个新阶段。']],
-      bilibili:[{bv:'BV1G64y147im',title:'三大主力红军会师'}],
-      commanders:[
-        {name:'朱德',role:'红军总司令',side:'ccp'},
-        {name:'贺龙',role:'红二方面军总指挥',side:'ccp'},
-        {name:'徐向前',role:'红四方面军总指挥',side:'ccp'},
-        {name:'周恩来',role:'中革军委副主席',side:'ccp'},
-        {name:'毛炳文',role:'第37军军长',side:'kmt'},
-        {name:'王均',role:'第3军军长',side:'kmt'}
-      ]},
-    { id:'yongping', name:'永坪镇', route:'25th', coords:[36.8,109.3], type:'end',
-      events:['红二十五军与陕北红军会师（1935年9月15日）'],
-      desc:'红二十五军到达陕西延川县永坪镇，与刘志丹、谢子长等领导的陕北红军胜利会师，成为第一支到达陕北的长征队伍。两军合编为红十五军团，为迎接中央红军到来做好了准备。',
-      quotes:[['《刘志丹传》','永坪会师大大加强了陕北革命力量，为迎接中央红军到来创造了条件。']],
-      commanders:[
-        {name:'刘志丹',role:'陕北红军领导人',side:'ccp'},
-        {name:'徐海东',role:'红十五军团军团长',side:'ccp'},
-        {name:'程子华',role:'红十五军团政委',side:'ccp'}
-      ]},
-    { id:'shuikou', name:'水口', route:'detach', coords:[26.4,118.7], type:'battle',
-      events:['水口战斗（1934年7月）——北上抗日先遣队首战告捷'],
-      desc:'水口是闽江上的重要码头，驻有国民党军保安团。1934年7月，寻淮洲、粟裕率领的红七军团在北上途中以迅雷不及掩耳之势攻占水口，缴获大量枪支弹药和粮食，为继续北上打开了通道。这是北上抗日先遣队出征后的第一个重大胜利。',
-      quotes:[['《粟裕战争回忆录》','"水口一仗，打出了红七军团的威风，也打掉了敌人的气焰。"']],
-      commanders:[
-        {name:'寻淮洲',role:'红七军团军团长',side:'ccp'},
-        {name:'乐少华',role:'红七军团政委',side:'ccp'},
-        {name:'粟裕',role:'红七军团参谋长',side:'ccp'}
-      ],
-      bilibili:[{bv:'BV1fV411H7VK?p=26',title:'北上抗日先遣队'}]},
-    { id:'fuzhou', name:'福州', route:'detach', coords:[26.1,119.3], type:'battle',
-      events:['福州战役（1934年8月）'],
-      desc:'1934年8月，红七军团在北上途中突袭福建省会福州，与国民党军第八十七师激战三昼夜。虽因敌强我弱未能攻克，但这次行动震动了国民党当局，达到了调动敌军的目的，扩大了红军在闽浙地区的影响力。',
-      quotes:[['《红军北上抗日先遣队史》','福州之战虽未攻克，却使国民党当局大为震惊，不得不从中央苏区前线抽调兵力回援。']],
-      commanders:[
-        {name:'寻淮洲',role:'红七军团军团长',side:'ccp'},
-        {name:'乐少华',role:'红七军团政委',side:'ccp'},
-        {name:'粟裕',role:'红七军团参谋长',side:'ccp'},
-        {name:'蒋介石',role:'军事委员会委员长',side:'kmt'},
-        {name:'蒋鼎文',role:'驻闽绥靖公署主任',side:'kmt'}
-      ],
-      bilibili:[{bv:'BV1fV411H7VK?p=26',title:'北上抗日先遣队'}]},
-    { id:'chongxi', name:'重溪', route:'detach', coords:[28.9,117.6], type:'rally',
-      events:['重溪会师——红七军团与红十军团合编（1934年11月）'],
-      desc:'1934年11月，红七军团到达赣东北重溪，与方志敏领导的红十军胜利会师。两军合编为新的红十军团，方志敏任军政委员会主席，刘畴西任军团长，乐少华任政委，粟裕任参谋长。下辖第十九、二十、二十一师，继续担负北上抗日先遣队的使命。',
-      quotes:[['《方志敏传》','"重溪会师后，红十军团辖三个师共一万余人，是一支不可忽视的抗日力量。"']],
-      commanders:[
-        {name:'方志敏',role:'军政委员会主席',side:'ccp'},
-        {name:'刘畴西',role:'红十军团军团长',side:'ccp'},
-        {name:'粟裕',role:'红十军团参谋长',side:'ccp'},
-        {name:'寻淮洲',role:'第十九师师长',side:'ccp'}
-      ],
-      bilibili:[{bv:'BV1fV411H7VK?p=26',title:'北上抗日先遣队'}]},
-    { id:'huaiyu', name:'怀玉山', route:'detach', coords:[28.9,117.9], type:'battle',
-      events:['怀玉山战斗——北上抗日先遣队失利（1935年1月）'],
-      desc:'1935年1月，红十军团在赣东北怀玉山地区遭国民党军重兵包围。经数日血战，部队大部牺牲或溃散，方志敏、刘畴西被俘（后在南昌英勇就义），粟裕率数百人突出重围。寻淮洲已在先前的谭家桥战斗中牺牲。北上抗日先遣队的失败是长征前夕红军遭受的重大挫折之一，但保留的骨干后来成为新四军的重要组成部分。',
-      quotes:[['方志敏《可爱的中国》','"敌人只能砍下我们的头颅，决不能动摇我们的信仰！"'],['《粟裕战争回忆录》','"怀玉山失败了，但革命的种子没有绝灭，它将在更广阔的天地里生根发芽。"']],
-      commanders:[
-        {name:'方志敏',role:'军政委员会主席',side:'ccp'},
-        {name:'刘畴西',role:'红十军团军团长',side:'ccp'},
-        {name:'粟裕',role:'红十军团参谋长',side:'ccp'},
-        {name:'寻淮洲',role:'第十九师师长',side:'ccp'},
-        {name:'俞济时',role:'追剿纵队司令',side:'kmt'}
-      ],
-      bilibili:[{bv:'BV1fV411H7VK?p=26',title:'北上抗日先遣队'}]}
-  ];
-
-  // ======================== INFO PANEL ========================
-  var infoDefault = document.getElementById('info-default');
-  var infoDetail = document.getElementById('info-detail');
-
-  function showDefault() { infoDefault.style.display='block'; infoDetail.style.display='none'; }
-
-  var COMMANDER_IMGS = {
-    '毛泽东':'https://commons.wikimedia.org/wiki/Special:FilePath/Mao_Tse_Tung.jpg',
-    '周恩来':'https://commons.wikimedia.org/wiki/Special:FilePath/Zhou_Enlai_portrait.jpg',
-    '朱德':'https://commons.wikimedia.org/wiki/Special:FilePath/Zhu_De.jpg',
-    '蒋介石':'https://commons.wikimedia.org/wiki/Special:FilePath/Chiang_Kai-shek.jpg',
-    '彭德怀':'https://commons.wikimedia.org/wiki/Special:FilePath/General_Peng_Dehuai.jpg',
-    '林彪':'https://commons.wikimedia.org/wiki/Special:FilePath/Lin_Biao.jpg',
-    '贺龙':'https://commons.wikimedia.org/wiki/Special:FilePath/He_Long.jpg',
-    '刘伯承':'https://commons.wikimedia.org/wiki/Special:FilePath/Liu_Bocheng.jpg',
-    '徐向前':'https://commons.wikimedia.org/wiki/Special:FilePath/Xu_Xiangqian.jpg',
-    '聂荣臻':'https://commons.wikimedia.org/wiki/Special:FilePath/Nie_Rongzhen.jpg',
-    '博古':'https://commons.wikimedia.org/wiki/Special:FilePath/Bo_Gu.jpg',
-    '张国焘':'https://commons.wikimedia.org/wiki/Special:FilePath/Zhang_Guotao.jpg',
-    '粟裕':'https://commons.wikimedia.org/wiki/Special:FilePath/Su_Yu.jpg',
-    '徐海东':'https://commons.wikimedia.org/wiki/Special:FilePath/Xu_Haidong.jpg',
-    '任弼时':'https://commons.wikimedia.org/wiki/Special:FilePath/Ren_Bishi.jpg',
-    '张闻天':'https://commons.wikimedia.org/wiki/Special:FilePath/Zhang_Wentian.jpg',
-    '王稼祥':'https://commons.wikimedia.org/wiki/Special:FilePath/Wang_Jiaxiang.jpg',
-    '薛岳':'https://commons.wikimedia.org/wiki/Special:FilePath/Xue_Yue.jpg',
-    '方志敏':'https://commons.wikimedia.org/wiki/Special:FilePath/Fang_Zhimin.jpg',
-    '刘志丹':'https://commons.wikimedia.org/wiki/Special:FilePath/Liu_Zhidan.jpg',
-  };
-  function cmdrFallback(el, name, color) { el.style.background=color; el.textContent=name[0]; el.style.display='flex'; el.style.fontSize='13px'; }
-
-  function renderCommanders(list, color, label) {
-    var h = '<div class="cmdr-group"><span class="cmdr-group-label" style="color:'+color+'">'+label+'</span><div class="cmdr-list">';
-    list.forEach(function(c){
-      var img = COMMANDER_IMGS[c.name];
-      if (img) {
-        h += '<div class="cmdr-item"><div class="cmdr-avatar" style="background:#fff;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:0"><img src="'+img+'" onerror="cmdrFallback(this.parentNode,\''+c.name+'\',\''+color+'\')" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div><div class="cmdr-name">'+c.name+'</div><div class="cmdr-role">'+c.role+'</div></div>';
-      } else {
-        h += '<div class="cmdr-item"><div class="cmdr-avatar" style="background:'+color+'">'+c.name[0]+'</div><div class="cmdr-name">'+c.name+'</div><div class="cmdr-role">'+c.role+'</div></div>';
-      }
-    });
-    h += '</div></div>';
-    return h;
+const data = {
+  ruijin: {
+    name: "瑞金",
+    date: "1934年10月",
+    type: "出发地",
+    description: "瑞金是中央革命根据地的中心，中华苏维埃共和国临时中央政府所在地。1934年10月，中央红军（红一方面军）从瑞金出发，开始了举世闻名的二万五千里长征。",
+    events: [
+      { title: "红军出发", detail: "1934年10月10日，中共中央和中革军委率领中央红军主力五个军团及中央、军委机关共8.6万余人，从瑞金出发，开始长征。" },
+      { title: "夜渡于都河", detail: "红军主力在于都河北岸集结，于10月16日至19日傍晚，从八个渡口渡过于都河，踏上了漫漫征途。" }
+    ],
+    quotes: [
+      { text: "\"红军不怕远征难，万水千山只等闲。五岭逶迤腾细浪，乌蒙磅礴走泥丸。\"", source: "—— 毛泽东《七律·长征》" },
+      { text: "\"长征是历史纪录上的第一次，长征是宣言书，长征是宣传队，长征是播种机。\"", source: "—— 毛泽东《论反对日本帝国主义的策略》" }
+    ]
+  },
+  xiangjiang: {
+    name: "湘江",
+    date: "1934年11月27日—12月1日",
+    type: "战役",
+    description: "湘江战役是长征途中最为惨烈的战役。红军在突破国民党军第四道封锁线时，与数十万敌军血战五昼夜，付出了极为惨重的代价，从出发时的8.6万人锐减至3万余人。",
+    events: [
+      { title: "突破封锁线", detail: "红军在湘江两岸与国民党军展开激战，掩护中央纵队渡江。各军团浴血奋战，最终突破湘江防线。" },
+      { title: "损失惨重", detail: "红五军团第三十四师、红三军团第十八团被阻于湘江东岸，大部壮烈牺牲。湘江战役后，全军由出发时的8.6万人锐减至3万余人。" }
+    ],
+    quotes: [
+      { text: "\"三年不饮湘江水，十年不食湘江鱼。\"", source: "—— 民间流传的谚语，形容湘江战役之惨烈" },
+      { text: "\"湘江之战，红军遭遇了前所未有的损失。江水被染成了红色，浮尸塞江。\"", source: "—— 《红军长征史》" }
+    ]
+  },
+  tongdao: {
+    name: "通道",
+    date: "1934年12月12日",
+    type: "会议",
+    description: "通道会议是长征途中一次重要的紧急会议。在湘江战役惨重损失后，中共中央在湖南通道举行紧急会议，讨论红军的战略方向问题。",
+    events: [
+      { title: "通道转兵", detail: "在会上，毛泽东力主放弃原定向湘西与红二、六军团会合的计划，改向敌人兵力薄弱的贵州进军。这一建议得到张闻天、王稼祥等人的支持。" }
+    ],
+    quotes: [
+      { text: "\"通道转兵，挽救了处于危难之中的红军，是长征中一次具有关键意义的转折。\"", source: "—— 《毛泽东传》" }
+    ]
+  },
+  liping: {
+    name: "黎平",
+    date: "1934年12月18日",
+    type: "会议",
+    description: "黎平会议是长征途中中共中央政治局召开的会议，进一步讨论了红军战略方针问题，为遵义会议的召开奠定了基础。",
+    events: [
+      { title: "黎平决议", detail: "会议通过了《中央政治局关于战略方针之决定》，正式放弃去湘西的计划，决定在川黔边建立新的根据地。" }
+    ],
+    quotes: [
+      { text: "\"黎平会议的决定，使中央红军避免了覆灭的危险，为遵义会议的召开创造了条件。\"", source: "—— 刘伯承《回顾长征》" }
+    ]
+  },
+  zunyi: {
+    name: "遵义",
+    date: "1935年1月15日—17日",
+    type: "会议",
+    description: "遵义会议是中国共产党历史上一个生死攸关的转折点。会议结束了王明"左"倾教条主义在中共中央的统治，确立了毛泽东在红军和中共中央的领导地位。",
+    events: [
+      { title: "遵义会议召开", detail: "中共中央政治局在遵义召开扩大会议，集中解决当时最为紧迫的军事问题和组织问题。张闻天、毛泽东、王稼祥等作了重要发言，批评了博古、李德在军事指挥上的错误。" },
+      { title: "确立领导地位", detail: "会议增选毛泽东为中央政治局常委，取消博古、李德的军事指挥权，由朱德、周恩来负责军事指挥。之后成立了由毛泽东、周恩来、王稼祥组成的三人军事指挥小组。" }
+    ],
+    quotes: [
+      { text: "\"遵义会议以后，毛泽东同志在党中央的领导地位就确立了，这才有后来的长征胜利、抗日胜利、解放战争胜利。\"", source: "—— 邓小平《对起草〈关于建国以来党的若干历史问题的决议〉的意见》" },
+      { text: "\"雄关漫道真如铁，而今迈步从头越。从头越，苍山如海，残阳如血。\"", source: "—— 毛泽东《忆秦娥·娄山关》" }
+    ]
+  },
+  chishui: {
+    name: "赤水",
+    date: "1935年1月—3月",
+    type: "战役",
+    description: "四渡赤水是长征中最为精彩、最为经典的军事行动。毛泽东指挥中央红军在川黔滇边区与数十万敌军周旋，四次往返于赤水河两岸，巧妙摆脱了敌人的围追堵截。",
+    events: [
+      { title: "一渡赤水", detail: "1935年1月29日，红军从土城、元厚等地西渡赤水河，向川南进发。" },
+      { title: "二渡赤水", detail: "2月18日至21日，红军从太平渡、二郎滩等地东渡赤水河，回师黔北，随后取得娄山关大捷。" },
+      { title: "三渡赤水", detail: "3月16日至17日，红军从茅台镇西渡赤水河，佯攻川南。" },
+      { title: "四渡赤水", detail: "3月21日至22日，红军秘密从二郎滩、太平渡等地再次东渡赤水，南渡乌江，威逼贵阳，将国民党军甩在身后。" }
+    ],
+    quotes: [
+      { text: "\"四渡赤水之战，是中央红军在长征中最惊心动魄、最精彩的军事行动，是毛泽东军事指挥的得意之笔。\"", source: "—— 《毛泽东年谱》" },
+      { text: "\"毛主席用兵真如神。\"", source: "—— 红军战士回忆" }
+    ]
+  },
+  jinsha: {
+    name: "金沙江",
+    date: "1935年5月",
+    type: "战役",
+    description: "巧渡金沙江是红军长征中的一次重要军事行动。红军以声东击西之计，在皎平渡口用七只小船，七天七夜全部渡过金沙江，彻底摆脱了数十万国民党军的围追堵截。",
+    events: [
+      { title: "抢占皎平渡", detail: "红军先遣队化装成国民党军，一昼夜急行军百余里，抢占了皎平渡口，缴获了七只渡船。" },
+      { title: "七天七夜", detail: "从5月1日至9日，红军主力三万余人依靠七只小船，历时七天七夜，全部安全渡过金沙江。" }
+    ],
+    quotes: [
+      { text: "\"金沙水拍云崖暖，大渡桥横铁索寒。\"", source: "—— 毛泽东《七律·长征》" },
+      { text: "\"红军过了金沙江，就把国民党追兵甩在身后了，从此跳出了数十万敌军的包围圈。\"", source: "—— 杨成武《忆长征》" }
+    ]
+  },
+  huili: {
+    name: "会理",
+    date: "1935年5月12日",
+    type: "会议",
+    description: "会理会议是在红军渡过金沙江后在四川会理召开的中共中央政治局扩大会议，进一步巩固了遵义会议的成果。",
+    events: [
+      { title: "统一思想", detail: "会议批评了林彪等人怀疑毛泽东领导、要求撤换军事指挥的错误意见，进一步巩固了毛泽东在党和红军中的领导地位。" }
+    ],
+    quotes: [
+      { text: "\"会理会议巩固了遵义会议的成果，维护了党和红军的团结统一。\"", source: "—— 《中国共产党历史》" }
+    ]
+  },
+  luding: {
+    name: "泸定桥",
+    date: "1935年5月29日",
+    type: "战役",
+    description: "飞夺泸定桥是长征中一场惊心动魄的战斗。红军突击队冒着枪林弹雨，攀踏着悬空的铁索，奇迹般地夺取了泸定桥，打开了红军北上的通道。",
+    events: [
+      { title: "昼夜奔袭", detail: "红四团以一日一百二十公里的惊人速度，昼夜兼程，抢在敌人援军之前到达泸定桥。" },
+      { title: "飞夺铁索桥", detail: "22名突击队员冒着敌人密集的火力，攀踏着光溜溜的铁索，边前进边铺木板，最终冲过桥头，夺取了泸定桥。" }
+    ],
+    quotes: [
+      { text: "\"大渡桥横铁索寒\"", source: "—— 毛泽东《七律·长征》" },
+      { text: "\"红军飞夺泸定桥的壮举，是长征精神最生动的体现。面对敌人的枪林弹雨，勇士们视死如归，攀踏铁索奋勇向前。\"", source: "—— 《红军不怕远征难》" }
+    ]
+  },
+  maogong: {
+    name: "懋功",
+    date: "1935年6月18日",
+    type: "会师",
+    description: "懋功会师是中央红军与红四方面军胜利会师的历史时刻。两大主力红军在四川懋功（今小金县）会合，红军总兵力达到十万余人，革命力量空前壮大。",
+    events: [
+      { title: "胜利会师", detail: "中央红军先头部队与红四方面军第三十军在懋功达维镇会师。两军将士欢呼雀跃，互相拥抱，场面极为感人。" }
+    ],
+    quotes: [
+      { text: "\"两大主力红军会师，是中国革命战争史上光辉的一页。\"", source: "—— 徐向前《历史的回顾》" }
+    ]
+  },
+  xueshan: {
+    name: "雪山",
+    date: "1935年6月—7月",
+    type: "事件",
+    description: "翻越雪山是长征中最为艰苦的历程之一。红军连续翻越了夹金山、梦笔山、长板山、仓德山、打古山等海拔4000米以上的雪山，许多战士因严寒、缺氧而牺牲。",
+    events: [
+      { title: "翻越夹金山", detail: "夹金山海拔约4500米，山上终年积雪，气候变化无常。红军战士穿着单衣草鞋，凭着坚强的意志翻越了这座"神仙山"。" }
+    ],
+    quotes: [
+      { text: "\"更喜岷山千里雪，三军过后尽开颜。\"", source: "—— 毛泽东《七律·长征》" },
+      { text: "\"雪山上的风像刀子一样，雪光刺得人睁不开眼。许多战友倒下了，再也没有站起来，但活着的继续往前走。\"", source: "—— 老红军回忆录" }
+    ]
+  },
+  maoergai: {
+    name: "毛儿盖",
+    date: "1935年8月20日",
+    type: "会议",
+    description: "毛儿盖会议是中共中央政治局在四川松潘毛儿盖召开的会议，讨论了红军主力北上陕甘的战略方针问题。",
+    events: [
+      { title: "毛儿盖决议", detail: "会议通过了《关于目前战略方针之补充决定》，批评了张国焘的右倾退却主张，决定红军主力继续北上，执行创建川陕甘根据地的战略方针。" }
+    ],
+    quotes: [
+      { text: "\"毛儿盖会议是红军北上与南下之争的又一次重要交锋，会议坚持了北上抗日的正确方向。\"", source: "—— 《中国共产党历史》" }
+    ]
+  },
+  caodi: {
+    name: "草地",
+    date: "1935年8月—9月",
+    type: "事件",
+    description: "穿越松潘草地是长征中最为艰难的一段路程。草地茫茫无际，沼泽遍布，气候变化无常。红军战士以野菜、树皮充饥，克服了难以想象的困难，终于走出了这片死亡之地。",
+    events: [
+      { title: "进入草地", detail: "红军分左右两路进入松潘草地。草地表面是水草覆盖的沼泽，下面是无底的泥潭，稍有不慎就会陷入其中。" },
+      { title: "粮食断绝", detail: "进入草地后不久，红军粮食即告断绝。战士们以野菜、树皮、草根充饥，甚至将皮带、皮包煮了吃。" }
+    ],
+    quotes: [
+      { text: "\"草地是长征中最大的自然障碍。茫茫无际的沼泽，吞噬了多少红军战士的生命。但红军的意志比草地更坚强。\"", source: "—— 刘伯承《回顾长征》" },
+      { text: "\"在草地里，我们吃的是野菜、树皮，喝的是泥水，但每个人的心中都有一团火——跟着共产党，走到胜利。\"", source: "—— 老红军回忆" }
+    ]
+  },
+  lazikou: {
+    name: "腊子口",
+    date: "1935年9月16日—17日",
+    type: "战役",
+    description: "腊子口战役是红军进入甘肃前的一场关键战斗。腊子口是川甘边界上的天险隘口，两边悬崖如削，中间只有一条窄路。红军以奇袭方式攻克了这道天险。",
+    events: [
+      { title: "天险腊子口", detail: "腊子口宽仅数米，两边是万丈悬崖，国民党军在此设防，号称"一夫当关，万夫莫开"。" },
+      { title: "攀崖奇袭", detail: "红军战士用绑腿带和长杆攀上陡峭的悬崖，从侧后方摸到敌人阵地，前后夹击，攻克了腊子口天险。" }
+    ],
+    quotes: [
+      { text: "\"腊子口一开，红军就进入了甘肃，离陕北根据地越来越近了。\"", source: "—— 《红军长征史》" }
+    ]
+  },
+  hadapu: {
+    name: "哈达铺",
+    date: "1935年9月20日—22日",
+    type: "会议",
+    description: "哈达铺会议是红军长征途中一次具有里程碑意义的会议。毛泽东在哈达铺从报纸上得知陕北有红军根据地的消息，正式决定将长征的落脚点放在陕北。",
+    events: [
+      { title: "确定落脚点", detail: "毛泽东从缴获的国民党报纸上获悉陕北有刘志丹领导的红军和根据地存在，于是在哈达铺召开会议，正式决定红军北上陕北。" }
+    ],
+    quotes: [
+      { text: "\"哈达铺是长征的加油站。红军在这里得到了难得的休整，更重要的是，在这里找到了长征的落脚点。\"", source: "—— 肖华《长征组歌》" }
+    ]
+  },
+  wuqi: {
+    name: "吴起镇",
+    date: "1935年10月19日",
+    type: "终点",
+    description: "吴起镇是中央红军长征的终点。1935年10月19日，中共中央率领中央红军到达陕北吴起镇，历时一年、行程二万五千里的长征胜利结束。",
+    events: [
+      { title: "胜利到达", detail: "毛泽东到达吴起镇后，对红军的行程进行了总结：从瑞金算起，十二个月零两天，共三百六十七天，行程二万五千里。" },
+      { title: "切尾巴战斗", detail: "到达吴起镇的第二天，毛泽东亲自指挥了"切尾巴"战斗，将尾随而来的国民党骑兵击退，为长征画上了圆满的句号。" }
+    ],
+    quotes: [
+      { text: "\"长征一完结，新局面就开始。\"", source: "—— 毛泽东《论反对日本帝国主义的策略》" },
+      { text: "\"我说，长征是宣言书，长征是宣传队，长征是播种机。\"", source: "—— 毛泽东《论反对日本帝国主义的策略》" },
+      { text: "\"红军不怕远征难，万水千山只等闲。\"", source: "—— 毛泽东《七律·长征》" }
+    ]
+  },
+  yanan: {
+    name: "延安",
+    date: "1935年—1948年",
+    type: "革命圣地",
+    description: "延安是长征胜利后中共中央所在地，是中国革命的圣地。从1935年红军到达陕北到1948年东渡黄河，中共中央在延安领导了中国革命十三年。",
+    events: [
+      { title: "革命中心", detail: "中共中央到达陕北后，以延安为中心，领导了抗日战争和解放战争，延安成为中国革命的大本营。" }
+    ],
+    quotes: [
+      { text: "\"延安是革命圣地，是中国人民心中的灯塔。\"", source: "—— 周恩来" }
+    ]
+  },
+  jinggang: {
+    name: "井冈山",
+    date: "1927年—1934年",
+    type: "革命根据地",
+    description: "井冈山是中国第一个农村革命根据地，被誉为"中国革命的摇篮"。毛泽东、朱德等在此建立了中国工农红军，开创了"农村包围城市、武装夺取政权"的革命道路。",
+    events: [
+      { title: "井冈山会师", detail: "1928年4月，毛泽东领导的秋收起义部队与朱德、陈毅领导的南昌起义余部在井冈山胜利会师，合编为中国工农红军第四军。" }
+    ],
+    quotes: [
+      { text: "\"星星之火，可以燎原。\"", source: "—— 毛泽东《星星之火，可以燎原》" }
+    ]
   }
+};
 
-  function showLocation(id) {
-    var loc = LOCATIONS.find(function(l){ return l.id===id; });
-    if (!loc) return;
-    var type = TYPE_CFG[loc.type] || TYPE_CFG.landmark;
-    var routeName = ROUTE_NAMES[loc.route] || '';
-    infoDefault.style.display='none'; infoDetail.style.display='block';
-    var h = '<div class="detail-header" style="background:'+type.color+'">';
-    h += '<div class="loc-name">'+loc.name+'</div>';
-    h += '<div class="loc-meta"><span>所属：'+routeName+'</span><span class="loc-type-badge">'+type.label+'</span></div></div>';
-    h += '<div class="detail-body">';
-    h += '<div class="section-title">历史背景</div><p class="desc">'+loc.desc+'</p>';
-    if (loc.events&&loc.events.length) {
-      h += '<div class="section-title">主要事件</div>';
-      loc.events.forEach(function(e){ h+='<div class="event-item">'+e+'</div>'; });
-    }
-    if (loc.battles&&loc.battles.length) {
-      h += '<div class="section-title">相关战役</div>';
-      loc.battles.forEach(function(b){ h+='<div class="event-item">'+b+'</div>'; });
-    }
-    if (loc.quotes&&loc.quotes.length) {
-      h+='<div class="section-title">历史记载</div>';
-      loc.quotes.forEach(function(q){
-        h+='<div class="quote-box"><div class="quote-text">'+q[1]+'</div><div class="quote-source">—— '+q[0]+'</div></div>';
+const placeholder = document.getElementById('placeholder');
+const content = document.getElementById('content');
+const markers = document.querySelectorAll('.marker');
+
+markers.forEach(m => {
+  m.addEventListener('click', () => {
+    markers.forEach(x => x.classList.remove('active'));
+    m.classList.add('active');
+    const id = m.dataset.id;
+    const d = data[id];
+    if (!d) return;
+    placeholder.style.display = 'none';
+    content.style.display = 'block';
+    let html = `<h2>${d.name}</h2><div class="meta"><span>📅 ${d.date}</span><span>🏷️ ${d.type}</span></div>`;
+    html += `<div class="section"><h3>概述</h3><p>${d.description}</p></div>`;
+    if (d.events && d.events.length) {
+      html += `<div class="section"><h3>历史事件</h3>`;
+      d.events.forEach(e => {
+        html += `<p><strong>${e.title}：</strong>${e.detail}</p>`;
       });
+      html += `</div>`;
     }
-    if (loc.commanders&&loc.commanders.length) {
-      h+='<div class="section-title cmdrs-section">主要指挥</div>';
-      var ccps = loc.commanders.filter(function(c){ return c.side==='ccp'; });
-      var kmts = loc.commanders.filter(function(c){ return c.side==='kmt'; });
-      if (ccps.length) { h += renderCommanders(ccps, '#B22222', '红军'); }
-      if (kmts.length) { h += renderCommanders(kmts, '#2C3E50', '国民党'); }
-    }
-    if (loc.bilibili&&loc.bilibili.length) {
-      h+='<div class="section-title">解说视频</div>';
-      loc.bilibili.forEach(function(v){
-        h+='<a class="video-link" href="https://www.bilibili.com/video/'+v.bv+'" target="_blank" rel="noopener"><span class="play-icon">▶</span>'+v.title+'</a>';
+    if (d.quotes && d.quotes.length) {
+      html += `<div class="section"><h3>历史记载</h3>`;
+      d.quotes.forEach(q => {
+        html += `<blockquote>${q.text}<cite>${q.source}</cite></blockquote>`;
       });
+      html += `</div>`;
     }
-    h+='<button class="back-btn" onclick="document.getElementById(\'info-detail\').style.display=\'none\';document.getElementById(\'info-default\').style.display=\'block\'">← 返回总览</button></div>';
-    infoDetail.innerHTML = h;
-  }
-
-  // ======================== MAP ========================
-  function toGcj02(lat, lng) { return [lat, lng]; }
-
-  // Smooth a polyline using Catmull-Rom interpolation
-  function smoothPts(pts, segments) {
-    segments = segments || 3;
-    if (pts.length < 3) return pts;
-    var out = [pts[0]];
-    for (var i = 0; i < pts.length - 1; i++) {
-      var p0 = i > 0 ? pts[i - 1] : pts[0];
-      var p1 = pts[i];
-      var p2 = pts[i + 1];
-      var p3 = i < pts.length - 2 ? pts[i + 2] : pts[i + 1];
-      var t = 0.5;
-      for (var s = 1; s <= segments; s++) {
-        var u = s / (segments + 1);
-        var u2 = u * u, u3 = u2 * u;
-        var lat = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*u + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*u2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*u3);
-        var lng = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*u + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*u2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*u3);
-        out.push([lat, lng]);
-      }
-      out.push(p2);
-    }
-    return out;
-  }
-
-  var mapCenter = toGcj02(32,107);
-  var map = L.map('map', { center:mapCenter, zoom:5, minZoom:4, maxZoom:11, zoomControl:true });
-
-  var tiandituKey = '66181d121dbe66dea9c6c965945cbca3';
-  L.tileLayer('https://t{s}.tianditu.gov.cn/ter_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ter&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk='+tiandituKey, {
-    subdomains:['0','1','2','3','4','5','6','7'], maxZoom:18, opacity:0.4
-  }).addTo(map);
-  L.tileLayer('https://t{s}.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk='+tiandituKey, {
-    subdomains:['0','1','2','3','4','5','6','7'], maxZoom:18, opacity:0.8
-  }).addTo(map);
-  L.tileLayer('https://t{s}.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk='+tiandituKey, {
-    subdomains:['0','1','2','3','4','5','6','7'], maxZoom:18, opacity:0.3,
-    attribution:'<a href="https://www.tianditu.gov.cn">天地图</a>'
-  }).addTo(map);
-  map.createPane('annotation-pane');
-  map.getPane('annotation-pane').style.zIndex = 500;
-  L.tileLayer('https://t{s}.tianditu.gov.cn/cta_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cta&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk='+tiandituKey, {
-    subdomains:['0','1','2','3','4','5','6','7'], maxZoom:18, pane:'annotation-pane'
-  }).addTo(map);
-
-  // Draw all routes
-  ROUTES.forEach(function(route) {
-    var raw = route.pts.map(function(p){ return toGcj02(p[0],p[1]); });
-    var ll = smoothPts(raw, 4);
-    L.polyline(ll, { color:'#fff', weight:5, opacity:0.7 }).addTo(map);
-    var line = L.polyline(ll, { color:route.color, weight:2.5, opacity:0.95 }).addTo(map);
-    L.polylineDecorator(line, {
-      patterns:[{
-        offset:25, repeat:60, symbol:L.Symbol.arrowHead({
-          pixelSize:14, polygon:true,
-          pathOptions:{color:'#fff', weight:2, fillColor:route.color, fillOpacity:1}
-        })
-      }]
-    }).addTo(map);
+    content.innerHTML = html;
   });
-
-  // Markers
-  LOCATIONS.forEach(function(loc, idx) {
-    var type = TYPE_CFG[loc.type] || TYPE_CFG.landmark;
-    var borderColor = ROUTE_COLORS[loc.route] || '#999';
-    var icon = L.divIcon({
-      className:'custom-marker',
-      html:'<div style="background:'+type.color+';width:14px;height:14px;border-radius:50%;border:2px solid '+borderColor+';box-shadow:0 0 6px rgba(255,255,255,0.7);"></div>',
-      iconSize:[18,18], iconAnchor:[9,9]
-    });
-    var gcj = toGcj02(loc.coords[0],loc.coords[1]);
-    L.marker(gcj, {icon:icon, opacity:0.95})
-      .addTo(map)
-      .bindTooltip(loc.name, {direction:'top', offset:[0,-14]})
-      .on('click', function(){ showLocation(loc.id); });
-  });
-
-  // Legend
-  var legend = L.control({position:'bottomright'});
-  legend.onAdd = function() {
-    var div = L.DomUtil.create('div','route-legend');
-    var h = '<div class="legend-title">各路红军路线</div>';
-    ROUTES.forEach(function(r) {
-      h += '<div class="legend-item"><span class="swatch" style="background:'+r.color+'"></span>'+ROUTE_NAMES[r.id]+'</div>';
-    });
-    h += '<div style="margin-top:4px;font-size:11px;color:#8D6E63;">颜色对应各军路线</div>';
-    div.innerHTML = h;
-    return div;
-  };
-  legend.addTo(map);
-
-  // Fit bounds
-  var allPts = [];
-  ROUTES.forEach(function(r){ r.pts.forEach(function(p){ allPts.push(toGcj02(p[0],p[1])); }); });
-  map.fitBounds(L.polyline(allPts).getBounds().pad(0.07));
-
-})();
+});
 </script>
 </body>
 </html>
