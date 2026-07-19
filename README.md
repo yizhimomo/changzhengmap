@@ -29,20 +29,17 @@
 想查一场战斗、一位将领、一个日期，直接搜。搜"遵义"看到会议和战役，搜"彭德怀"找到他指挥的所有战斗，搜"1935年5月"看看那个月发生了什么。
 
 <div align="center">
-  <!-- 第一张 -->
-  <div style="display:inline-block;width:260px;margin:0 2px;vertical-align:top;">
-    <h4 style="margin:4px 0;font-size:14px;">查找附近的红军途径地点</h4>
-    <img width="260" height="180" style="object-fit:cover;border-radius:4px;" src="https://github.com/user-attachments/assets/4d22bb43-1864-4b68-a889-c26045b36463" />
+  <div style="display: inline-block; margin: 0 4px; vertical-align: top;">
+    <p style="margin:0 0 4px 0;">查找附近的红军途径地点</p>
+    <img width="260" height="180" style="object-fit:cover;border-radius:4px" src="https://github.com/user-attachments/assets/4d22bb43-1864-4b68-a889-c26045b36463" />
   </div>
-  <!-- 第二张 -->
-  <div style="display:inline-block;width:260px;margin:0 2px;vertical-align:top;">
-    <h4 style="margin:4px 0;font-size:14px;">长征主题搜索</h4>
-    <img width="260" height="180" style="object-fit:cover;border-radius:4px;" src="https://github.com/user-attachments/assets/10267070-0e0f-470b-8608-9f3de8d712bb" />
+  <div style="display: inline-block; margin: 0 4px; vertical-align: top;">
+    <p style="margin:0 0 4px 0;">长征主题搜索</p>
+    <img width="260" height="180" style="object-fit:cover;border-radius:4px" src="https://github.com/user-attachments/assets/10267070-0e0f-470b-8608-9f3de8d712bb" />
   </div>
-  <!-- 第三张 -->
-  <div style="display:inline-block;width:260px;margin:0 2px;vertical-align:top;">
-    <h4 style="margin:4px 0;font-size:14px;">同时期各路红军的相对位置</h4>
-    <img width="260" height="180" style="object-fit:cover;border-radius:4px;" src="https://github.com/user-attachments/assets/dd32f0f3-1fd8-4401-b89b-698c393c7076" />
+  <div style="display: inline-block; margin: 0 4px; vertical-align: top;">
+    <p style="margin:0 0 4px 0;">同时期各路红军的相对位置</p>
+    <img width="260" height="180" style="object-fit:cover;border-radius:4px" src="https://github.com/user-attachments/assets/dd32f0f3-1fd8-4401-b89b-698c393c7076" />
   </div>
 </div>
 
