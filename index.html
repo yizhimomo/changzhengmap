@@ -215,6 +215,7 @@ html+='<div style="padding:3px 6px;cursor:pointer;border-radius:4px;display:flex
 html+='</div>';
 L.popup({closeButton:false}).setLatLng(e.latlng).setContent(html).openOn(map);
 });
+(function(){var t0=null,pos0=null,longTimer=null;map.on('touchstart',function(e){if(e.originalEvent.touches.length>1)return;pos0=e.latlng;t0=Date.now();longTimer=setTimeout(function(){map.on('contextmenu',function _once(e2){map.off('contextmenu',_once);});map.fire('contextmenu',{latlng:pos0,originalEvent:{preventDefault:function(){}}});},600);});map.on('touchmove',function(){if(longTimer){clearTimeout(longTimer);longTimer=null;}});map.on('touchend',function(){if(longTimer){clearTimeout(longTimer);longTimer=null;}});})();
 
 var layers={
 ter:L.tileLayer(tdtUrl('ter'),{opacity:.4,subdomains:['0','1','2','3','4','5','6','7'],attribution:'&copy; <a href="https://www.tianditu.gov.cn">天地图</a>'}).addTo(map),
