@@ -43,3 +43,7 @@
 基于 Leaflet.js 构建，单页 HTML，打开即用。无需安装，无需联网（除地图瓦片）。
 
 在线查看（清晰度有损）：<https://yizhimomo.github.io/changzhengmap/>
+
+---
+
+信息通过AI搜集处理，可能存在错误，如有需要修改之处，请提交issue
