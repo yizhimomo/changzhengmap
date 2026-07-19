@@ -194,28 +194,30 @@ return t;
 
 var map=L.map('map',{zoom:6,minZoom:4,maxZoom:15,center:[30.3937,108.6983],maxBounds:[[17.0573,83.9893],[39.4776,125.0376]],maxBoundsViscosity:1,zoomControl:false,attributionControl:true,fadeAnimation:false});
 map.attributionControl.setPrefix('');
+function showMapPopup(latlng){
+	var lat=latlng.lat.toFixed(4),lng=latlng.lng.toFixed(4);
+	var pts=[];
+	locations.forEach(function(l){
+		var dist=map.distance(latlng,[l.lat,l.lng]);
+		if(dist<100000)pts.push({id:l.id,name:l.name,lat:l.lat,lng:l.lng,dist:Math.round(dist)});
+	});
+	pts.sort(function(a,b){return a.dist-b.dist;});
+	if(pts.length>10)pts=pts.slice(0,10);
+	var coordTxt=lat+', '+lng;
+	var html='<div style="font-size:13px;text-align:center;line-height:1.6;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f0ede8;cursor:pointer" onclick="var t=this;navigator.clipboard.writeText(\''+coordTxt+'\').then(function(){t.innerHTML=\'<span style=color:#27ae60>\\u2713 \\u5df2\\u590d\\u5236</span>\'})"><span style="font-weight:600;color:#c0392b">'+lat+'</span>, <span style="font-weight:600;color:#2980b9">'+lng+'</span></div>';
+	html+='<div style="font-size:12px;max-height:160px;overflow-y:auto">';
+	if(!pts.length)html+='<div style="padding:4px;color:#999">附近未找到节点</div>';
+	else pts.forEach(function(p){
+		html+='<div style="padding:3px 6px;cursor:pointer;border-radius:4px;display:flex;justify-content:space-between;gap:12px" onmouseover="this.style.background=\'#f5f2ec\'" onmouseout="this.style.background=\'\'" onclick="showLocation(\''+p.id+'\');map.setView(['+p.lat+','+p.lng+'],8,{animate:true})"><span style="color:#2c3e50;font-weight:600">'+p.name+'</span><span style="color:#999">'+(p.dist<1000?p.dist+'m':(p.dist/1000).toFixed(1)+'km')+'</span></div>';
+	});
+	html+='</div>';
+	L.popup({closeButton:false}).setLatLng(latlng).setContent(html).openOn(map);
+}
 map.on('contextmenu',function(e){
-e.originalEvent.preventDefault();
-var lat=e.latlng.lat.toFixed(4),lng=e.latlng.lng.toFixed(4);
-var pts=[];
-locations.forEach(function(l){
-var dist=map.distance(e.latlng,[l.lat,l.lng]);
-if(dist<100000)pts.push({id:l.id,name:l.name,lat:l.lat,lng:l.lng,dist:Math.round(dist)});
+	e.originalEvent.preventDefault();
+	showMapPopup(e.latlng);
 });
-pts.sort(function(a,b){return a.dist-b.dist;});
-if(pts.length>10)pts=pts.slice(0,10);
-var lat=e.latlng.lat.toFixed(4),lng=e.latlng.lng.toFixed(4);
-var coordTxt=lat+', '+lng;
-var html='<div style="font-size:13px;text-align:center;line-height:1.6;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f0ede8;cursor:pointer" onclick="var t=this;navigator.clipboard.writeText(\''+coordTxt+'\').then(function(){t.innerHTML=\'<span style=color:#27ae60>\\u2713 \\u5df2\\u590d\\u5236</span>\'})"><span style="font-weight:600;color:#c0392b">'+lat+'</span>, <span style="font-weight:600;color:#2980b9">'+lng+'</span></div>';
-html+='<div style="font-size:12px;max-height:160px;overflow-y:auto">';
-if(!pts.length)html+='<div style="padding:4px;color:#999">附近未找到节点</div>';
-else pts.forEach(function(p){
-html+='<div style="padding:3px 6px;cursor:pointer;border-radius:4px;display:flex;justify-content:space-between;gap:12px" onmouseover="this.style.background=\'#f5f2ec\'" onmouseout="this.style.background=\'\'" onclick="showLocation(\''+p.id+'\');map.setView(['+p.lat+','+p.lng+'],8,{animate:true})"><span style="color:#2c3e50;font-weight:600">'+p.name+'</span><span style="color:#999">'+(p.dist<1000?p.dist+'m':(p.dist/1000).toFixed(1)+'km')+'</span></div>';
-});
-html+='</div>';
-L.popup({closeButton:false}).setLatLng(e.latlng).setContent(html).openOn(map);
-});
-(function(){var t0=null,pos0=null,longTimer=null;map.on('touchstart',function(e){if(e.originalEvent.touches.length>1)return;pos0=e.latlng;t0=Date.now();longTimer=setTimeout(function(){map.on('contextmenu',function _once(e2){map.off('contextmenu',_once);});map.fire('contextmenu',{latlng:pos0,originalEvent:{preventDefault:function(){}}});},600);});map.on('touchmove',function(){if(longTimer){clearTimeout(longTimer);longTimer=null;}});map.on('touchend',function(){if(longTimer){clearTimeout(longTimer);longTimer=null;}});})();
+(function(){var mc=map.getContainer(),timer=null,startPt=null;L.DomEvent.on(mc,'touchstart',function(e){if(e.touches.length>1)return;var r=mc.getBoundingClientRect(),x=e.touches[0].clientX-r.left,y=e.touches[0].clientY-r.top;startPt=map.containerPointToLatLng([x,y]);timer=setTimeout(function(){showMapPopup(startPt);timer=null;},600);});L.DomEvent.on(mc,'touchmove',function(){if(timer){clearTimeout(timer);timer=null;}});L.DomEvent.on(mc,'touchend',function(){if(timer){clearTimeout(timer);timer=null;}});})();
 
 var layers={
 ter:L.tileLayer(tdtUrl('ter'),{opacity:.4,subdomains:['0','1','2','3','4','5','6','7'],attribution:'&copy; <a href="https://www.tianditu.gov.cn">天地图</a>'}).addTo(map),
