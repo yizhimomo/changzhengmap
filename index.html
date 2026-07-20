@@ -202,6 +202,7 @@ function showMapPopup(latlng){
 		if(dist<100000)pts.push({id:l.id,name:l.name,lat:l.lat,lng:l.lng,dist:Math.round(dist)});
 	});
 	pts.sort(function(a,b){return a.dist-b.dist;});
+	var seen={},deduped=[];pts.forEach(function(p){if(!seen[p.name]){seen[p.name]=true;deduped.push(p);}});pts=deduped;
 	if(pts.length>10)pts=pts.slice(0,10);
 	var coordTxt=lat+', '+lng;
 	var html='<div style="font-size:13px;text-align:center;line-height:1.6;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f0ede8;cursor:pointer" onclick="var t=this;navigator.clipboard.writeText(\''+coordTxt+'\').then(function(){t.innerHTML=\'<span style=color:#27ae60>\\u2713 \\u5df2\\u590d\\u5236</span>\'})"><span style="font-weight:600;color:#c0392b">'+lat+'</span>, <span style="font-weight:600;color:#2980b9">'+lng+'</span></div>';
